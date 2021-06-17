@@ -47,7 +47,7 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
 
             Protocol.VBAT -> {
                 val battery = byteBuffer.short / 1000f
-                if (batCell == 0 && battery > 2.8) {
+                if (batCell == 0 && battery > 3.8) {
                     batCell = (battery / 3.8).toInt()
                     if (battery / batCell > 4.2)
                         ++batCell
