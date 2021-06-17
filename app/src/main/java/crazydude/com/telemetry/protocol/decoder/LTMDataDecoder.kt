@@ -10,6 +10,7 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
+        var batCell = 0
         val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
         when (data.telemetryType) {
             Protocol.GPS -> {
@@ -46,6 +47,15 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
 
             Protocol.VBAT -> {
                 val battery = byteBuffer.short / 1000f
+                if (batCell == 0 && battery > 2.8) {
+                    batCell = (battery / 3.8).toInt()
+                    if (battery / batCell > 4.2)
+                        ++batCell
+                    if (battery / batCell < 2.8)
+                        --batCell
+                }
+                if(batCell != 0)
+                    listener.onCellVoltageData(battery / batCell)
                 listener.onVBATData(battery)
             }
 
