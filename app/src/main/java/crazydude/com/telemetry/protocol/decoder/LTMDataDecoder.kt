@@ -2,15 +2,21 @@ package crazydude.com.telemetry.protocol.decoder
 
 import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.text.DecimalFormat
+import kotlin.math.round
 
 class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
 
+    private var batCell = 0
+    private var drawnTimer: Long = 0
+    private var previousDrawn = 0
 
     override fun decodeData(data: Protocol.Companion.TelemetryData) {
         var decoded = true
-        var batCell = 0
         val byteBuffer = ByteBuffer.wrap(data.rawData).order(ByteOrder.LITTLE_ENDIAN)
         when (data.telemetryType) {
             Protocol.GPS -> {
@@ -41,8 +47,21 @@ class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
             }
 
             Protocol.FUEL -> {
-                val fuel = byteBuffer.short
-                listener.onFuelData(fuel.toInt())
+                val drawn = byteBuffer.short.toInt()
+                if (previousDrawn == 0)
+                    previousDrawn = drawn
+                if (drawnTimer == 0L)
+                    drawnTimer = System.currentTimeMillis()
+                val currentDrawn = drawn - previousDrawn
+                val currentTimer: Long = System.currentTimeMillis()
+                val currentDrawnTimeout = (currentTimer - drawnTimer).toInt()
+                if (currentDrawn > 0) {
+                    drawnTimer = currentTimer
+                    previousDrawn = drawn
+                    listener.onCurrentData((((currentDrawn * 3600f * (currentDrawnTimeout / 1000f)) / currentDrawnTimeout) / (currentDrawnTimeout / 1000f))
+                        .toBigDecimal().setScale(2, RoundingMode.HALF_EVEN).toFloat())
+                }
+                listener.onFuelData(drawn)
             }
 
             Protocol.VBAT -> {
