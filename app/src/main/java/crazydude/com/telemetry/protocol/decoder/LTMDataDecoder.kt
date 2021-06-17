@@ -2,12 +2,9 @@ package crazydude.com.telemetry.protocol.decoder
 
 import android.util.Log
 import crazydude.com.telemetry.protocol.Protocol
-import java.math.BigDecimal
 import java.math.RoundingMode
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
-import java.text.DecimalFormat
-import kotlin.math.round
 
 class LTMDataDecoder(listener: Listener) : DataDecoder(listener) {
 
